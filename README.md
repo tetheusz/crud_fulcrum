@@ -39,6 +39,8 @@ python app.py
 # Servidor em http://localhost:8000
 ```
 
+Abra no navegador `http://localhost:8000/` para usar a UI simples.
+
 ## Endpoints
 
 - GET /health — verificação simples

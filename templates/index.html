@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Fulcrum CRUD - Demo</title>
+	<style>
+		body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 2rem; }
+		section { border: 1px solid #ddd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+		label { display: block; margin-top: .5rem; }
+		input, select, textarea { width: 100%; padding: .5rem; margin-top: .25rem; }
+		button { padding: .5rem .75rem; cursor: pointer; }
+		pre { background: #f7f7f7; padding: .75rem; border-radius: 6px; overflow: auto; }
+		.row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+	</style>
+</head>
+<body>
+	<h1>Fulcrum CRUD - Demo</h1>
+
+	<section>
+		<h2>Saúde</h2>
+		<button onclick="ping()">GET /health</button>
+		<pre id="health"></pre>
+	</section>
+
+	<section>
+		<h2>Bootstrap de Formulário</h2>
+		<div class="row">
+			<div>
+				<label>Nome do formulário</label>
+				<input id="form_name" placeholder="Exemplo CRUD - Fulcrum (Completo)" />
+			</div>
+			<div>
+				<label>Classification Set ID (opcional)</label>
+				<input id="classification_set_id" placeholder="CLASSIFICATION_SET_ID" />
+			</div>
+		</div>
+		<div class="row">
+			<div>
+				<label>Linked Form ID (opcional)</label>
+				<input id="linked_form_id" placeholder="FORM_ID para RecordLink" />
+			</div>
+			<div>
+				<label><input type="checkbox" id="create_linked_form" checked /> Criar linked form automaticamente</label>
+			</div>
+		</div>
+		<button onclick="bootstrapForm()">POST /bootstrap-form</button>
+		<pre id="bootstrap"></pre>
+	</section>
+
+	<section>
+		<h2>Formulários</h2>
+		<button onclick="listForms()">GET /forms</button>
+		<pre id="forms"></pre>
+	</section>
+
+	<section>
+		<h2>Registros</h2>
+		<div class="row">
+			<div>
+				<label>Form ID</label>
+				<input id="records_form_id" placeholder="FORM_ID" />
+			</div>
+			<div>
+				<label>Record ID</label>
+				<input id="record_id" placeholder="RECORD_ID" />
+			</div>
+		</div>
+		<div>
+			<label>JSON do registro (create/update)</label>
+			<textarea id="record_json" rows="10">{
+  "record": {
+    "form_id": "",
+    "form_values": {
+      "campo_texto": "Exemplo de texto",
+      "campo_numerico": 123,
+      "campo_sim_nao": "yes",
+      "campo_data": "2025-08-28",
+      "campo_hora": "13:45",
+      "campo_escolha_unica": "a",
+      "campo_escolha_multipla": ["x","z"],
+      "campo_link": "https://fulcrumapp.com"
+    }
+  }
+}</textarea>
+		</div>
+		<div>
+			<button onclick="searchRecords()">GET /records</button>
+			<button onclick="getRecord()">GET /records/:id</button>
+			<button onclick="createRecord()">POST /records</button>
+			<button onclick="updateRecord()">PUT /records/:id</button>
+			<button onclick="deleteRecord()">DELETE /records/:id</button>
+		</div>
+		<pre id="records"></pre>
+	</section>
+
+	<script>
+		const base = '';
+		const $ = (id) => document.getElementById(id);
+		const out = (id, data) => $(id).textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+
+		async function ping() {
+			const r = await fetch(base + '/health');
+			out('health', await r.json());
+		}
+
+		async function bootstrapForm() {
+			const payload = {
+				name: $('form_name').value || 'Exemplo CRUD - Fulcrum (Completo)',
+				create_linked_form: $('create_linked_form').checked
+			};
+			const cs = $('classification_set_id').value.trim();
+			if (cs) payload.classification_set_id = cs;
+			const lf = $('linked_form_id').value.trim();
+			if (lf) payload.linked_form_id = lf;
+			const r = await fetch(base + '/bootstrap-form', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+			out('bootstrap', await r.json());
+		}
+
+		async function listForms() {
+			const r = await fetch(base + '/forms');
+			out('forms', await r.json());
+		}
+
+		async function searchRecords() {
+			const formId = $('records_form_id').value.trim();
+			const q = formId ? ('?form_id=' + encodeURIComponent(formId)) : '';
+			const r = await fetch(base + '/records' + q);
+			out('records', await r.json());
+		}
+
+		async function getRecord() {
+			const id = $('record_id').value.trim();
+			if (!id) { out('records', 'Informe Record ID'); return; }
+			const r = await fetch(base + '/records/' + encodeURIComponent(id));
+			out('records', await r.json());
+		}
+
+		async function createRecord() {
+			let data;
+			try { data = JSON.parse($('record_json').value); } catch (e) { out('records', 'JSON inválido'); return; }
+			const r = await fetch(base + '/records', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+			out('records', await r.json());
+		}
+
+		async function updateRecord() {
+			const id = $('record_id').value.trim();
+			if (!id) { out('records', 'Informe Record ID'); return; }
+			let data;
+			try { data = JSON.parse($('record_json').value); } catch (e) { out('records', 'JSON inválido'); return; }
+			const r = await fetch(base + '/records/' + encodeURIComponent(id), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+			out('records', await r.json());
+		}
+
+		async function deleteRecord() {
+			const id = $('record_id').value.trim();
+			if (!id) { out('records', 'Informe Record ID'); return; }
+			const r = await fetch(base + '/records/' + encodeURIComponent(id), { method: 'DELETE' });
+			out('records', r.status === 204 ? 'Registro removido' : await r.text());
+		}
+	</script>
+</body>
+</html>
+

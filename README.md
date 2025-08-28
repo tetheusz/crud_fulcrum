@@ -43,7 +43,7 @@ python app.py
 
 - GET /health — verificação simples
 - GET /forms — lista formulários
-- POST /bootstrap-form — cria um formulário de exemplo com campos: texto, numérico, sim/não, data, hora, e-mail, telefone, escolha única, múltiplas escolhas
+- POST /bootstrap-form — cria um formulário de exemplo completo com campos: texto, numérico, sim/não, data, hora, escolha única, múltiplas escolhas, classificação, assinatura, foto, vídeo, áudio, anexo de arquivo, endereço, hyperlink, cálculo, código de barras, vínculo de registro
 - GET /records?form_id=<id> — busca registros (pode usar `FULCRUM_FORM_ID` do `.env`)
 - GET /records/<record_id> — obtém um registro
 - POST /records — cria registro
@@ -55,7 +55,14 @@ python app.py
 ### 1) Criar formulário de exemplo
 
 ```bash
-curl -X POST http://localhost:8000/bootstrap-form
+curl -X POST http://localhost:8000/bootstrap-form \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "name": "Exemplo CRUD - Fulcrum (Completo)",
+    "create_linked_form": true
+    # opcional: "classification_set_id": "<CLASSIFICATION_SET_ID>"
+    # opcional: "linked_form_id": "<FORM_ID>"
+  }'
 ```
 
 Resposta (trecho):
@@ -127,4 +134,4 @@ curl -X DELETE http://localhost:8000/records/<RECORD_ID>
 
 ## Notas sobre tipos de campo
 
-Os tipos no payload do formulário seguem a nomenclatura usual da API do Fulcrum (`TextField`, `NumberField`, `YesNoField`, `DateField`, `TimeField`, `EmailField`, `PhoneField`, `ChoiceField`). Caso seu tenant utilize variantes, ajuste em `build_sample_form_payload` no arquivo `fulcrum_client.py`.
+Os tipos seguem a nomenclatura da API do Fulcrum: `TextField`, `NumberField`, `YesNoField`, `DateField`, `TimeField`, `ChoiceField` (com `allow_multiple` para múltipla), `ClassificationField` (requer `classification_set_id`), `SignatureField`, `PhotoField`, `VideoField`, `AudioField`, `AttachmentField`, `AddressField`, `HyperlinkField`, `CalculatedField` (com `expression`), `BarcodeField`, `RecordLinkField` (requer `form_id`). Veja `form_schemas.py`.
